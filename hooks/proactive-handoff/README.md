@@ -6,7 +6,7 @@ Automatically track session state for continuity across Claude Code sessions. Wh
 
 - **Tracks modified files** — Auto-captured when you Edit/Write files
 - **Tracks next steps** — What to do if interrupted (manually updated)
-- **Saves state before compaction** — PreCompact hook backs up state
+- **Preserves state through compaction** — PreCompact hook saves backup AND re-injects state into compaction summary
 - **Loads previous state on start** — SessionStart hook displays previous session's state
 
 ## Files
@@ -15,7 +15,8 @@ Automatically track session state for continuity across Claude Code sessions. Wh
 |------|---------|
 | `proactive-handoff.sh` | Main script with all commands |
 | `post-edit-hook.sh` | Extracts file path from hook JSON input |
-| `settings-snippet.json` | Hook configuration to add to your settings.json |
+| `session-start.sh` | SessionStart hook to load previous state |
+| `settings-snippet.json` | Complete hook configuration for settings.json |
 | `DESIGN.md` | Detailed design documentation |
 
 ## Installation
@@ -27,11 +28,15 @@ Automatically track session state for continuity across Claude Code sessions. Wh
 mkdir -p .claude/hooks
 cp proactive-handoff.sh .claude/hooks/
 cp post-edit-hook.sh .claude/hooks/
+cp session-start.sh .claude/hooks/
 chmod +x .claude/hooks/proactive-handoff.sh
 chmod +x .claude/hooks/post-edit-hook.sh
+chmod +x .claude/hooks/session-start.sh
 ```
 
-### 2. Add hooks to settings.json
+### 2. Configure hooks in settings.json
+
+The `settings-snippet.json` file contains all three required hooks (SessionStart, PostToolUse, PreCompact).
 
 **Option A: If you already have a settings.json**
 
@@ -43,75 +48,32 @@ Merge the contents of `settings-snippet.json` into your `.claude/settings.json` 
 # Create .claude directory if it doesn't exist
 mkdir -p .claude
 
-# Copy the settings snippet
+# Copy the complete settings snippet
 cp settings-snippet.json .claude/settings.json
 ```
 
-### 3. Configure SessionStart hook
+**Option C: If you have existing hooks**
 
-You need a SessionStart hook to load previous state. Choose one of these options:
+Add the three hook configurations from `settings-snippet.json` to your existing hooks:
+- `SessionStart` - Loads previous session state (calls `session-start.sh`)
+- `PostToolUse` - Tracks file modifications (calls `post-edit-hook.sh`)
+- `PreCompact` - Saves state backup (calls `proactive-handoff.sh save`)
 
-**Option A: Create a standalone SessionStart script**
+### 3. (Optional) Add claude.md for persistent context
 
-```bash
-# Create the script
-cat > .claude/hooks/session-start.sh << 'EOF'
-#!/bin/bash
-# SessionStart hook - loads previous session state
+If you maintain a `.claude/claude.md` file with important project context, it will automatically be re-injected during compaction. This file is NOT managed by proactive-handoff - you maintain it manually.
 
-cd "$(git rev-parse --show-toplevel)"
+Example `.claude/claude.md`:
+```markdown
+# Project Context
 
-# Load previous session state if exists, or initialize new one
-if [ -f ".claude/session-state.md" ]; then
-    echo "=== Session State (previous session) ==="
-    cat ".claude/session-state.md"
-    echo ""
-    # Initialize fresh state for new session
-    .claude/hooks/proactive-handoff.sh init 2>/dev/null || true
-elif [ -f ".claude/hooks/proactive-handoff.sh" ]; then
-    # No previous state, just initialize
-    .claude/hooks/proactive-handoff.sh init 2>/dev/null || true
-fi
-EOF
+## Architecture
+- Using React + TypeScript
+- Backend is Python FastAPI
 
-# Make it executable
-chmod +x .claude/hooks/session-start.sh
-```
-
-Then add to `.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/session-start.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-**Option B: Add to existing SessionStart hook**
-
-If you already have a SessionStart hook, add this code to it:
-
-```bash
-# Load previous session state if exists, or initialize new one
-if [ -f ".claude/session-state.md" ]; then
-    echo "=== Session State (previous session) ==="
-    cat ".claude/session-state.md"
-    echo ""
-    # Initialize fresh state for new session
-    .claude/hooks/proactive-handoff.sh init 2>/dev/null || true
-elif [ -f ".claude/hooks/proactive-handoff.sh" ]; then
-    .claude/hooks/proactive-handoff.sh init 2>/dev/null || true
-fi
+## Key Decisions
+- Authentication: JWT tokens
+- Database: PostgreSQL
 ```
 
 ### 4. Add to .gitignore
@@ -121,6 +83,9 @@ fi
 echo ".claude/session-state.md" >> .gitignore
 echo ".claude/session-state.md.bak" >> .gitignore
 echo ".claude/session-history.log" >> .gitignore
+
+# Optional: if you want claude.md to be project-specific (not checked in)
+echo ".claude/claude.md" >> .gitignore
 ```
 
 ## Usage
@@ -218,6 +183,16 @@ Auto-updated during session. Read at session start for continuity.
 <!-- Manual notes can be added here -->
 ```
 
+## How State Survives Compaction
+
+**Critical behavior**: SessionStart hooks do NOT run after autocompact - they only run when starting a brand new session. This means any state loaded at session start would be lost when context gets compacted.
+
+**Solution**: The PreCompact hook does TWO things:
+1. Saves backup to `.claude/session-state.md.bak`
+2. **Outputs the current state** - This output gets injected into the compaction summary, preserving the state throughout the session
+
+Without the PreCompact re-injection, Claude would "forget" the session state after compaction.
+
 ## Design Philosophy
 
 **Tasks should fit in one context window.** This system helps with unexpected interruptions, not with multi-session work. If a task needs multiple sessions, break it down into smaller tasks.
@@ -267,6 +242,33 @@ sed -i "pattern" file
 
 ## Advanced Usage
 
+### Customizing Context Re-injection
+
+The PreCompact hook automatically re-injects:
+- `.claude/session-state.md` (always)
+- `.claude/claude.md` (if exists)
+
+To add more context files, edit the PreCompact command in your settings.json:
+
+```json
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/proactive-handoff.sh save && echo '' && echo '=== Session State ===' && cat .claude/session-state.md 2>/dev/null || true && echo '' && if [ -f '.claude/claude.md' ]; then echo '=== Context ===' && cat .claude/claude.md; fi && if [ -f '.claude/tasks.md' ]; then echo '' && echo '=== Tasks ===' && cat .claude/tasks.md; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Why this matters**: SessionStart hooks do NOT run after autocompact. Without re-injection, Claude would "forget" these files after compaction. The PreCompact output gets preserved in the compaction summary.
+
 ### Automatic cleanup on PreCompact
 
 Add cleanup to your PreCompact hook:
@@ -300,6 +302,50 @@ You could clear the "Modified Files" list after committing (since files are now 
 ```
 
 Or add as a post-commit git hook.
+
+## Optional: Loading Additional Context Files
+
+The included `session-start.sh` script loads only `session-state.md`. If you also maintain `context.md` (for strategic checkpoints) or `tasks.md` (for backlog), you can modify `session-start.sh` to load them:
+
+```bash
+#!/bin/bash
+# SessionStart hook - loads previous session state
+# Part of proactive-handoff system
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+# Load previous session state if exists, or initialize new one
+if [ -f ".claude/session-state.md" ]; then
+    echo "=== Session State (previous session) ==="
+    cat ".claude/session-state.md"
+    echo ""
+    # Initialize fresh state for new session
+    .claude/hooks/proactive-handoff.sh init 2>/dev/null || true
+elif [ -f ".claude/hooks/proactive-handoff.sh" ]; then
+    # No previous state, just initialize
+    .claude/hooks/proactive-handoff.sh init 2>/dev/null || true
+fi
+
+# Optional: Load context.md (strategic checkpoint)
+if [ -f ".claude/context.md" ]; then
+    echo "=== Context (last checkpoint) ==="
+    cat ".claude/context.md"
+    echo ""
+fi
+
+# Optional: Load tasks.md (backlog)
+if [ -f ".claude/tasks.md" ]; then
+    echo "=== Tasks (backlog) ==="
+    cat ".claude/tasks.md"
+    echo ""
+fi
+```
+
+**Note:** These files are not part of proactive-handoff. You manage them manually:
+- `context.md` - Strategic checkpoints (what was accomplished, key decisions)
+- `tasks.md` - Backlog of things to do eventually
 
 ## See Also
 

@@ -1,11 +1,11 @@
 {
   "hooks": {
-    "PreCompact": [
+    "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/proactive-handoff.sh save"
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/session-start.sh"
           }
         ]
       }
@@ -17,6 +17,16 @@
           {
             "type": "command",
             "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/post-edit-hook.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/proactive-handoff.sh save && echo '' && echo '=== Session State (re-injecting for compaction) ===' && cat .claude/session-state.md 2>/dev/null || true && echo '' && if [ -f '.claude/claude.md' ]; then echo '=== Context (re-injecting for compaction) ===' && cat .claude/claude.md; fi"
           }
         ]
       }

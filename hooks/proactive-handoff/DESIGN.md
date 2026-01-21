@@ -55,8 +55,10 @@ session-state.md
    - Auto-tracks file modifications
 
 2. **PreCompact** (before context window compaction)
-   - Calls `proactive-handoff.sh save`
-   - Backs up state to `.claude/session-state.md.bak`
+   - Calls `proactive-handoff.sh save` (backs up to `.claude/session-state.md.bak`)
+   - **CRITICAL**: Outputs current session-state.md (and optionally claude.md)
+   - This output gets injected into the compaction summary, preserving state
+   - Without this re-injection, Claude would "forget" the state after compaction
 
 3. **SessionStart** (when new session begins)
    - Displays previous session state if exists
@@ -170,15 +172,17 @@ Resume work or adjust plan
 Context limit approaching
     ↓
 PreCompact hook triggers
+    ├─ Save backup to .claude/session-state.md.bak
+    └─ Output session-state.md (gets injected into compaction)
     ↓
-Save state to backup
+Compaction happens (conversation summarized)
+    ├─ Session state preserved in summary (thanks to re-injection)
+    └─ SessionStart does NOT run (same session continues)
     ↓
-Compaction happens
-    ↓
-State file persists (not in conversation context)
-    ↓
-Continue working
+Continue working with state still available
 ```
+
+**Key insight**: Without PreCompact re-injection, the state loaded at SessionStart would be lost after compaction, since SessionStart only runs when starting a NEW session, not after autocompact within an existing session.
 
 ---
 
