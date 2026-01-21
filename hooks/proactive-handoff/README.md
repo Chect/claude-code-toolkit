@@ -59,33 +59,56 @@ Add the three hook configurations from `settings-snippet.json` to your existing 
 - `PostToolUse` - Tracks file modifications (calls `post-edit-hook.sh`)
 - `PreCompact` - Saves state backup (calls `proactive-handoff.sh save`)
 
-### 3. (Optional) Add claude.md for persistent context
+### 3. (Optional) Add persistent context files
 
-If you maintain a `.claude/claude.md` file with important project context, it will automatically be re-injected during compaction. This file is NOT managed by proactive-handoff - you maintain it manually.
+The PreCompact hook automatically re-injects these files during compaction (if they exist):
+- `.claude/context.md` - Strategic checkpoints (what was accomplished, key decisions)
+- `.claude/tasks.md` - Backlog of things to do
+- `.claude/claude.md` - General project context
 
-Example `.claude/claude.md`:
+These files are NOT managed by proactive-handoff - you maintain them manually.
+
+Example `.claude/context.md`:
 ```markdown
-# Project Context
+# Context
+
+## Latest Checkpoint
+- Completed user authentication system
+- Decision: Using JWT tokens for sessions
 
 ## Architecture
-- Using React + TypeScript
-- Backend is Python FastAPI
-
-## Key Decisions
-- Authentication: JWT tokens
+- Frontend: React + TypeScript
+- Backend: Python FastAPI
 - Database: PostgreSQL
+```
+
+Example `.claude/tasks.md`:
+```markdown
+# Tasks
+
+## Todo
+- [ ] Add password reset flow
+- [ ] Implement rate limiting
+- [ ] Write API documentation
+
+## Done
+- [x] User registration
+- [x] Login/logout
 ```
 
 ### 4. Add to .gitignore
 
 ```bash
-# Add these lines to your .gitignore
+# Add these lines to your .gitignore (transient session files)
 echo ".claude/session-state.md" >> .gitignore
 echo ".claude/session-state.md.bak" >> .gitignore
 echo ".claude/session-history.log" >> .gitignore
 
-# Optional: if you want claude.md to be project-specific (not checked in)
-echo ".claude/claude.md" >> .gitignore
+# Optional: Ignore context files if you want them project-specific (not shared)
+# Note: You might want to CHECK IN context.md and tasks.md to share with team
+echo ".claude/context.md" >> .gitignore    # Optional
+echo ".claude/tasks.md" >> .gitignore      # Optional
+echo ".claude/claude.md" >> .gitignore     # Optional
 ```
 
 ## Usage
@@ -189,9 +212,13 @@ Auto-updated during session. Read at session start for continuity.
 
 **Solution**: The PreCompact hook does TWO things:
 1. Saves backup to `.claude/session-state.md.bak`
-2. **Outputs the current state** - This output gets injected into the compaction summary, preserving the state throughout the session
+2. **Outputs all context files** - These get injected into the compaction summary, preserving state throughout the session:
+   - `session-state.md` (always)
+   - `context.md` (if exists)
+   - `tasks.md` (if exists)
+   - `claude.md` (if exists)
 
-Without the PreCompact re-injection, Claude would "forget" the session state after compaction.
+Without the PreCompact re-injection, Claude would "forget" all these files after compaction.
 
 ## Design Philosophy
 
@@ -246,6 +273,8 @@ sed -i "pattern" file
 
 The PreCompact hook automatically re-injects:
 - `.claude/session-state.md` (always)
+- `.claude/context.md` (if exists)
+- `.claude/tasks.md` (if exists)
 - `.claude/claude.md` (if exists)
 
 To add more context files, edit the PreCompact command in your settings.json:
