@@ -18,6 +18,7 @@ Scripts that run at specific points during Claude Code execution.
 | Hook | Description |
 |------|-------------|
 | [dangerous-command-check](hooks/dangerous-command-check/) | Warns before executing `rm -rf` and other destructive commands |
+| [proactive-handoff](hooks/proactive-handoff/) | Track session state for continuity across sessions and through compaction |
 
 See [hooks/README.md](hooks/README.md) for general hook documentation.
 
@@ -41,6 +42,23 @@ Standalone scripts for automation and workflows.
 | [wip-branch-workflow](scripts/wip-branch-workflow/) | Startup script for WIP branch pattern |
 
 See [scripts/README.md](scripts/README.md) for general script documentation.
+
+### MCP Servers
+
+Shared MCP (Model Context Protocol) server configuration for team use across multiple projects.
+
+| Feature | Description |
+|---------|-------------|
+| [Shared MCP Config](.mcp.json) | Git, filesystem, sequential-thinking, memory, MySQL, Brave Search |
+| [Setup Script](scripts/setup-mcp.sh) | Automated setup for projects using toolkit as submodule |
+| [Documentation](MCP-SETUP.md) | Complete guide to MCP server configuration |
+
+**Quick setup:**
+```bash
+./claude-code-toolkit/scripts/setup-mcp.sh
+```
+
+See [MCP-SETUP.md](MCP-SETUP.md) for detailed configuration and usage.
 
 ## Installation
 

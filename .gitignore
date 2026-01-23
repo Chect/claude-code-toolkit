@@ -1,0 +1,8 @@
+# macOS
+.DS_Store
+
+# Environment variables (if someone tests locally)
+.env
+
+# Backup files
+*.bak
