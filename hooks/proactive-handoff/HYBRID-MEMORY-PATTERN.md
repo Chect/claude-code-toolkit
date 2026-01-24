@@ -30,7 +30,6 @@ Design pattern for combining file-based persistence with MCP Memory Server knowl
 
 **Files:**
 - `.claude/session-state.md` - Auto-tracked file modifications, next steps
-- `.claude/tasks.md` - TodoWrite-integrated task tracking
 - `.claude/context.md` - Strategic checkpoints, architecture decisions
 - `.claude/claude.md` - General project context
 
@@ -243,41 +242,48 @@ open_nodes(["AgentModel"])
 ```
 1. SessionStart hook loads files
    ├─ session-state.md → Current state
-   ├─ tasks.md → Create TodoWrite
    └─ context.md → Strategic context
 
 2. MCP Memory auto-loads
    └─ memory.json → Knowledge graph available
 
-3. Claude has both:
+3. Native tasks auto-load
+   └─ ~/.claude/tasks/<TASK_LIST_ID>/ → Task breakdown
+
+4. Claude has all three:
    ├─ Files: Current strategic context
-   └─ Memory: Semantic knowledge + relationships
+   ├─ Memory: Semantic knowledge + relationships
+   └─ Tasks: Multi-step work breakdown
 ```
 
 ### During Work
 ```
 Files:
 ├─ Auto-track: session-state.md (file modifications)
-├─ Manual update: tasks.md (TodoWrite → markdown)
 └─ Explicit: context.md (strategic decisions)
 
 Memory:
 ├─ Auto-learn: Preferences, patterns
 ├─ Explicit: When you say "remember X"
 └─ Relationships: Project dependencies, integrations
+
+Tasks:
+└─ Auto-managed: Claude creates/updates as needed
 ```
 
 ### PreCompact
 ```
 1. Re-inject files (strategic context preserved)
    ├─ session-state.md
-   ├─ tasks.md
    └─ context.md
 
 2. Memory persists automatically
    └─ memory.json survives compaction (not in conversation)
 
-3. Both available post-compaction
+3. Tasks persist automatically
+   └─ ~/.claude/tasks/ survives compaction (native feature)
+
+4. All available post-compaction
 ```
 
 ### Session End
@@ -372,11 +378,12 @@ Edit .claude/context.md
 [Added strategic decision with rationale]
 
 === PreCompact ===
-# Files re-injected (context.md, tasks.md, session-state.md)
+# Files re-injected (context.md, session-state.md)
 # Memory persists automatically
+# Tasks persist automatically (native)
 
 === Post-Compaction ===
-# Both still available!
+# All still available!
 ```
 
 ## Benefits
@@ -419,7 +426,7 @@ Edit .claude/context.md
 ```bash
 # Review and commit periodically
 git diff .claude/context.md
-git add .claude/context.md .claude/tasks.md
+git add .claude/context.md
 git commit -m "Update project context"
 ```
 
@@ -443,6 +450,6 @@ delete_observations({
 
 ## See Also
 
-- [TODOWRITE-INTEGRATION.md](TODOWRITE-INTEGRATION.md) - TodoWrite + tasks.md integration
+- [TASKS.md](TASKS.md) - Native task tracking with CLAUDE_CODE_TASK_LIST_ID
 - [DESIGN.md](DESIGN.md) - Proactive handoff design philosophy
 - [MCP Memory Server](https://github.com/modelcontextprotocol/servers/tree/main/src/memory)

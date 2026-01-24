@@ -111,9 +111,8 @@ echo ".claude/session-state.md.bak" >> .gitignore
 echo ".claude/session-history.log" >> .gitignore
 
 # Optional: Ignore context files if you want them project-specific (not shared)
-# Note: You might want to CHECK IN context.md and tasks.md to share with team
+# Note: You might want to CHECK IN context.md to share with team
 echo ".claude/context.md" >> .gitignore    # Optional
-echo ".claude/tasks.md" >> .gitignore      # Optional
 echo ".claude/claude.md" >> .gitignore     # Optional
 ```
 
@@ -352,7 +351,7 @@ To add more context files, edit the PreCompact command in your settings.json:
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/proactive-handoff.sh save && echo '' && echo '=== Session State ===' && cat .claude/session-state.md 2>/dev/null || true && echo '' && if [ -f '.claude/claude.md' ]; then echo '=== Context ===' && cat .claude/claude.md; fi && if [ -f '.claude/tasks.md' ]; then echo '' && echo '=== Tasks ===' && cat .claude/tasks.md; fi"
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/proactive-handoff.sh save && echo '' && echo '=== Session State ===' && cat .claude/session-state.md 2>/dev/null || true && echo '' && if [ -f '.claude/context.md' ]; then echo '=== Context ===' && cat .claude/context.md && echo ''; fi && if [ -f '.claude/claude.md' ]; then echo '=== Claude Context ===' && cat .claude/claude.md; fi"
           }
         ]
       }
@@ -399,7 +398,7 @@ Or add as a post-commit git hook.
 
 ## Optional: Loading Additional Context Files
 
-The included `session-start.sh` script loads only `session-state.md`. If you also maintain `context.md` (for strategic checkpoints) or `tasks.md` (for backlog), you can modify `session-start.sh` to load them:
+The included `session-start.sh` script loads only `session-state.md`. If you also maintain `context.md` for strategic checkpoints, you can modify `session-start.sh` to load it:
 
 ```bash
 #!/bin/bash
@@ -428,18 +427,9 @@ if [ -f ".claude/context.md" ]; then
     cat ".claude/context.md"
     echo ""
 fi
-
-# Optional: Load tasks.md (backlog)
-if [ -f ".claude/tasks.md" ]; then
-    echo "=== Tasks (backlog) ==="
-    cat ".claude/tasks.md"
-    echo ""
-fi
 ```
 
-**Note:** These files are not part of proactive-handoff. You manage them manually:
-- `context.md` - Strategic checkpoints (what was accomplished, key decisions)
-- `tasks.md` - Backlog of things to do eventually
+**Note:** context.md is not part of proactive-handoff. You manage it manually for strategic checkpoints (what was accomplished, key decisions).
 
 ## Cleanup and Maintenance
 

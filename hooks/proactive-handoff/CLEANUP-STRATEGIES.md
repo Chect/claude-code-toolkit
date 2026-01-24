@@ -475,7 +475,7 @@ cp .claude/context.md .claude/archives/context-2026-01.md
 echo "File Size Report"
 echo "================"
 
-for file in session-state.md tasks.md context.md memory.json; do
+for file in session-state.md context.md memory.json; do
     if [ -f ".claude/$file" ]; then
         SIZE=$(stat -f%z ".claude/$file" 2>/dev/null || stat -c%s ".claude/$file" 2>/dev/null)
         SIZE_KB=$((SIZE / 1024))
@@ -493,10 +493,9 @@ du -sh .claude/archives 2>/dev/null || echo "No archives"
 
 ### Files
 1. **Archive, don't delete** - Old context has historical value
-2. **Weekly task cleanup** - Keep tasks.md manageable
-3. **Version context.md** - Before major milestones
-4. **Audit trail** - session-history.log tracks what was removed
-5. **Automate via hooks** - PreCompact is ideal for cleanup
+2. **Version context.md** - Before major milestones
+3. **Audit trail** - session-history.log tracks what was removed
+4. **Automate via hooks** - PreCompact is ideal for cleanup
 
 ### Memory
 1. **Monthly review** - Check memory.json size and relevance
