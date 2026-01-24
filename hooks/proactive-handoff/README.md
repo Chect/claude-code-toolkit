@@ -22,6 +22,10 @@ Automatically track session state for continuity across Claude Code sessions. Wh
 | `DESIGN.md` | Detailed design documentation |
 | `TODOWRITE-INTEGRATION.md` | TodoWrite + tasks.md integration guide |
 | `HYBRID-MEMORY-PATTERN.md` | Files + MCP Memory hybrid approach |
+| `CLEANUP-STRATEGIES.md` | Comprehensive cleanup and pruning strategies |
+| `archive-tasks.sh` | Weekly task archival automation |
+| `check-memory-health.sh` | MCP Memory health check and recommendations |
+| `file-size-check.sh` | Monitor file sizes and growth |
 
 ## Installation
 
@@ -481,8 +485,66 @@ fi
 - `context.md` - Strategic checkpoints (what was accomplished, key decisions)
 - `tasks.md` - Backlog of things to do eventually
 
+## Cleanup and Maintenance
+
+Over time, files and memory can grow. Regular cleanup keeps the system performant:
+
+### Weekly Cleanup
+
+```bash
+# Archive completed tasks (when >20 completed)
+.claude/hooks/archive-tasks.sh
+
+# Clean session state (keep last 20 files)
+.claude/hooks/proactive-handoff.sh cleanup 20
+
+# Check file sizes
+.claude/hooks/file-size-check.sh
+```
+
+### Monthly Cleanup
+
+```bash
+# Check memory health
+.claude/hooks/check-memory-health.sh
+
+# In Claude Code, review and prune:
+> Show me the entire knowledge graph
+> Remove outdated entities and observations
+> Find entities with no relations
+```
+
+### Automated Cleanup (Optional)
+
+Add to PreCompact hook for automatic cleanup:
+
+```json
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/archive-tasks.sh 2>/dev/null || true && .claude/hooks/proactive-handoff.sh cleanup 30 && .claude/hooks/proactive-handoff.sh save && ..."
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+See [CLEANUP-STRATEGIES.md](CLEANUP-STRATEGIES.md) for comprehensive cleanup strategies including:
+- File archival and rotation
+- MCP Memory pruning and relevance scoring
+- Time-based decay patterns
+- Automated cleanup schedules
+- Monitoring and health checks
+
 ## See Also
 
 - `DESIGN.md` - Detailed design documentation and rationale
+- `CLEANUP-STRATEGIES.md` - Comprehensive cleanup and pruning guide
 - Claude Code hooks documentation
 - Git hooks for integration options
