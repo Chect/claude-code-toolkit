@@ -41,7 +41,7 @@ TOTAL_SIZE=0
 
 echo "Core Files"
 echo "----------"
-for file in session-state.md tasks.md context.md claude.md; do
+for file in session-state.md context.md claude.md; do
     if [ -f ".claude/$file" ]; then
         SIZE=$(get_size ".claude/$file")
         SIZE_FORMATTED=$(format_size "$SIZE")
@@ -105,7 +105,7 @@ echo ""
 # Recommendations
 WARNINGS=0
 
-for file in session-state.md tasks.md context.md; do
+for file in session-state.md context.md; do
     if [ -f ".claude/$file" ]; then
         SIZE=$(get_size ".claude/$file")
         SIZE_KB=$((SIZE / 1024))
@@ -115,15 +115,6 @@ for file in session-state.md tasks.md context.md; do
             echo "⚠️  $file has $LINES lines (>200)"
             echo "   Run: .claude/hooks/proactive-handoff.sh cleanup 20"
             WARNINGS=$((WARNINGS + 1))
-        fi
-
-        if [ "$file" = "tasks.md" ]; then
-            COMPLETED=$(grep -c '^- \[x\]' ".claude/$file" 2>/dev/null || echo "0")
-            if [ "$COMPLETED" -gt 20 ]; then
-                echo "⚠️  $file has $COMPLETED completed tasks (>20)"
-                echo "   Run: .claude/hooks/archive-tasks.sh"
-                WARNINGS=$((WARNINGS + 1))
-            fi
         fi
     fi
 done
@@ -136,5 +127,4 @@ echo ""
 echo "Cleanup Commands"
 echo "----------------"
 echo "Session state:  .claude/hooks/proactive-handoff.sh cleanup 20"
-echo "Archive tasks:  .claude/hooks/archive-tasks.sh"
 echo "Memory health:  .claude/hooks/check-memory-health.sh"

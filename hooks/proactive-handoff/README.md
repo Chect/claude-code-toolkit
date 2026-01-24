@@ -6,7 +6,7 @@ Automatically track session state for continuity across Claude Code sessions. Wh
 
 - **Tracks modified files** — Auto-captured when you Edit/Write files
 - **Tracks next steps** — What to do if interrupted (manually updated)
-- **Integrates with TodoWrite** — Persistent tasks via .claude/tasks.md + TodoWrite UI
+- **Works with native Tasks** — Use Claude Code's built-in task tracking with CLAUDE_CODE_TASK_LIST_ID
 - **Preserves state through compaction** — PreCompact hook saves backup AND re-injects state into compaction summary
 - **Loads previous state on start** — SessionStart hook displays previous session's state
 
@@ -18,12 +18,10 @@ Automatically track session state for continuity across Claude Code sessions. Wh
 | `post-edit-hook.sh` | Extracts file path from hook JSON input |
 | `session-start.sh` | SessionStart hook to load previous state |
 | `settings-snippet.json` | Complete hook configuration for settings.json |
-| `tasks-template.md` | Template for TodoWrite-integrated task tracking |
 | `DESIGN.md` | Detailed design documentation |
-| `TODOWRITE-INTEGRATION.md` | TodoWrite + tasks.md integration guide |
 | `HYBRID-MEMORY-PATTERN.md` | Files + MCP Memory hybrid approach |
 | `CLEANUP-STRATEGIES.md` | Comprehensive cleanup and pruning strategies |
-| `archive-tasks.sh` | Weekly task archival automation |
+| `TASKS.md` | Guide to native task tracking with CLAUDE_CODE_TASK_LIST_ID |
 | `check-memory-health.sh` | MCP Memory health check and recommendations |
 | `file-size-check.sh` | Monitor file sizes and growth |
 
@@ -214,20 +212,19 @@ Auto-updated during session. Read at session start for continuity.
 <!-- Manual notes can be added here -->
 ```
 
-## Hybrid Memory Approach
+## Storage Strategy
 
 This system uses **two storage mechanisms** for optimal persistence:
 
 ### 1. Files (Human-Readable, Git-Tracked)
 
-**Purpose:** Strategic context, current state, team-shared decisions
+**Purpose:** Strategic context, current state, decisions
 
 - `.claude/session-state.md` - Auto-tracked file modifications, next steps
-- `.claude/tasks.md` - TodoWrite-integrated task tracking
 - `.claude/context.md` - Strategic decisions, architecture choices
 - `.claude/claude.md` - General project context
 
-**Why:** Team members can read, edit, and track changes via git
+**Why:** Human-readable, version controlled, team-shareable
 
 ### 2. MCP Memory Server (Semantic, Claude-Optimized)
 
@@ -238,82 +235,40 @@ This system uses **two storage mechanisms** for optimal persistence:
 - Relations (dependencies, integrations)
 - Observations (facts, preferences, patterns)
 
-**Why:** Claude can query semantically, traverse relationships, and learn patterns
-
-### Quick Start
-
-```bash
-# 1. Files are already set up via proactive-handoff
-# 2. Enable MCP Memory (already in .mcp.json)
-claude mcp list | grep memory
-
-# 3. Add memory.json to .gitignore
-echo ".claude/memory.json" >> .gitignore
-
-# 4. Use both:
-# - Files: Strategic decisions (you/team edit)
-# - Memory: Claude auto-learns (semantic knowledge)
-```
-
-### Example: What Goes Where
-
-**Files (context.md):**
-```markdown
-## Architecture Decision
-We chose hybrid memory: files for team context,
-MCP Memory for semantic relationships.
-
-Rationale: Best of both worlds.
-```
-
-**Memory (auto-populated):**
-```json
-{
-  "entities": [
-    {"name": "chris", "observations": ["Prefers private branches for WIP"]}
-  ],
-  "relations": [
-    {"from": "chris", "to": "claude-code-toolkit", "relationType": "maintains"}
-  ]
-}
-```
+**Why:** Semantic queries, relationship traversal, auto-learning
 
 See [HYBRID-MEMORY-PATTERN.md](HYBRID-MEMORY-PATTERN.md) for complete guide.
 
-## TodoWrite Integration
+## Native Task Tracking
 
-Claude Code's built-in TodoWrite tool creates task checklists in the UI, but **todos don't persist across sessions**. This system integrates TodoWrite with persistent task storage:
+Claude Code has built-in task tracking that **persists across sessions**. Use it instead of manual task files:
 
-### Quick Start
+### Quick Setup
 
 ```bash
-# Create tasks file
-cp .claude/hooks/proactive-handoff/tasks-template.md .claude/tasks.md
+# Add to ~/.zshrc or ~/.bashrc
+export CLAUDE_CODE_TASK_LIST_ID=default
 
-# Edit tasks
-cat > .claude/tasks.md << 'EOF'
-# Tasks
-
-## Active Tasks
-- [ ] Implement user authentication
-- [ ] Add input validation
-- [ ] Write tests
-
-## Completed
-- [x] Set up database
-EOF
+# Or project-specific
+export CLAUDE_CODE_TASK_LIST_ID=$(basename "$PWD")
 ```
 
-### How It Works
+### Benefits
 
-1. **SessionStart** - Loads `.claude/tasks.md` and instructs Claude to create TodoWrite todos
-2. **During work** - Claude uses TodoWrite for visual progress tracking
-3. **Completing tasks** - Claude updates `.claude/tasks.md` as tasks finish
-4. **PreCompact** - Re-injects tasks.md and reminds Claude to save current state
+- ✅ Persists across sessions
+- ✅ Survives context compaction
+- ✅ Native UI (press Ctrl+T to toggle)
+- ✅ Automatically managed by Claude
+- ✅ No manual files to maintain
 
-**Result**: TodoWrite UI during session + persistent tasks.md across sessions
+### Usage
 
-See [TODOWRITE-INTEGRATION.md](TODOWRITE-INTEGRATION.md) for complete guide.
+Tasks are created automatically when working on multi-step work. Commands:
+- `Ctrl+T` - Toggle task list view
+- `/todos` - List current tasks
+- Ask Claude: "show me all tasks" or "clear all tasks"
+
+See [TASKS.md](TASKS.md) for detailed guide.
 
 ## How State Survives Compaction
 
@@ -324,10 +279,11 @@ See [TODOWRITE-INTEGRATION.md](TODOWRITE-INTEGRATION.md) for complete guide.
 2. **Outputs all context files** - These get injected into the compaction summary, preserving state throughout the session:
    - `session-state.md` (always) - Auto-tracked file modifications and next steps
    - `context.md` (if exists) - Strategic checkpoints and decisions
-   - `tasks.md` (if exists) - TodoWrite-integrated task tracking
    - `claude.md` (if exists) - General project context
 
 Without the PreCompact re-injection, Claude would "forget" all these files after compaction.
+
+**Note:** Native tasks (CLAUDE_CODE_TASK_LIST_ID) automatically persist through compaction - no re-injection needed.
 
 ## Design Philosophy
 
@@ -492,9 +448,6 @@ Over time, files and memory can grow. Regular cleanup keeps the system performan
 ### Weekly Cleanup
 
 ```bash
-# Archive completed tasks (when >20 completed)
-.claude/hooks/archive-tasks.sh
-
 # Clean session state (keep last 20 files)
 .claude/hooks/proactive-handoff.sh cleanup 20
 
@@ -526,7 +479,7 @@ Add to PreCompact hook for automatic cleanup:
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/archive-tasks.sh 2>/dev/null || true && .claude/hooks/proactive-handoff.sh cleanup 30 && .claude/hooks/proactive-handoff.sh save && ..."
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/proactive-handoff.sh cleanup 30 && .claude/hooks/proactive-handoff.sh save && ..."
           }
         ]
       }

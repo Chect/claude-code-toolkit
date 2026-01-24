@@ -6,7 +6,6 @@ Strategies for maintaining clean, relevant data in both file-based and MCP Memor
 
 Without cleanup:
 - **Files**: session-state.md grows with hundreds of old file entries
-- **Tasks**: Completed tasks accumulate in tasks.md
 - **Context**: Old strategic decisions become stale
 - **Memory**: memory.json fills with outdated facts and relationships
 - **Performance**: Slower searches, larger context windows
@@ -20,11 +19,13 @@ Without cleanup:
 │   Files (Manual+Auto)    │  MCP Memory (Auto+Manual)        │
 ├──────────────────────────┼──────────────────────────────────┤
 │ • Archival rotation      │ • Time-based decay               │
-│ • Task completion        │ • Relevance pruning              │
-│ • File entry limiting    │ • Duplicate cleanup              │
-│ • Context versioning     │ • Orphan removal                 │
+│ • File entry limiting    │ • Relevance pruning              │
+│ • Context versioning     │ • Duplicate cleanup              │
+│                          │ • Orphan removal                 │
 └──────────────────────────┴──────────────────────────────────┘
 ```
+
+**Note:** Tasks are managed by Claude Code's native task system (CLAUDE_CODE_TASK_LIST_ID) - no cleanup needed.
 
 ## File-Based Cleanup Strategies
 
@@ -63,57 +64,7 @@ Without cleanup:
 }
 ```
 
-### 2. Task Archival (Manual)
-
-**What:** Move completed tasks to archive
-
-**When:** Weekly or when tasks.md gets large (>50 completed)
-
-**Strategy:**
-```bash
-# Create archive
-mkdir -p .claude/archives
-
-# Archive completed tasks
-cat > .claude/archives/tasks-2026-01-$(date +%U).md << 'EOF'
-# Completed Tasks - Week $(date +%U) 2026
-
-## Completed
-[Move completed tasks here from tasks.md]
-EOF
-
-# Clean tasks.md
-# Keep only active tasks
-```
-
-**Automated helper:**
-```bash
-#!/bin/bash
-# .claude/hooks/archive-tasks.sh
-
-ARCHIVE_DIR=".claude/archives"
-WEEK=$(date +%Y-W%U)
-ARCHIVE_FILE="$ARCHIVE_DIR/tasks-$WEEK.md"
-
-mkdir -p "$ARCHIVE_DIR"
-
-# Extract completed tasks
-COMPLETED=$(sed -n '/## Completed/,/##/p' .claude/tasks.md | grep '^- \[x\]')
-
-if [ -n "$COMPLETED" ]; then
-    # Append to weekly archive
-    echo "# Completed Tasks - $WEEK" >> "$ARCHIVE_FILE"
-    echo "" >> "$ARCHIVE_FILE"
-    echo "$COMPLETED" >> "$ARCHIVE_FILE"
-
-    # Clear completed from tasks.md
-    sed -i '' '/## Completed/,/##/{/^- \[x\]/d;}' .claude/tasks.md
-
-    echo "Archived $(echo "$COMPLETED" | wc -l) completed tasks to $ARCHIVE_FILE"
-fi
-```
-
-### 3. Context Rotation (Strategic)
+### 2. Context Rotation (Strategic)
 
 **What:** Archive old strategic decisions, keep context.md current
 
@@ -152,7 +103,7 @@ cp .claude/context.md .claude/archives/context-$(date +%Y-%m).md
 │   └── context-2026-Q1.md
 ```
 
-### 4. File Entry Limiting (Already Implemented)
+### 3. File Entry Limiting (Already Implemented)
 
 **Current behavior:**
 - `session-state.md` tracks file modifications

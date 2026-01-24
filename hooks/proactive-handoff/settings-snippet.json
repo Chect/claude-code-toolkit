@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/proactive-handoff.sh save && echo '' && echo '=== Session State (re-injecting for compaction) ===' && cat .claude/session-state.md 2>/dev/null || true && echo '' && if [ -f '.claude/context.md' ]; then echo '=== Context (re-injecting for compaction) ===' && cat .claude/context.md && echo ''; fi && if [ -f '.claude/tasks.md' ]; then echo '=== Tasks (re-injecting for compaction) ===' && cat .claude/tasks.md && echo '' && echo 'IMPORTANT: Update .claude/tasks.md with current TodoWrite state before compaction completes.' && echo ''; fi && if [ -f '.claude/claude.md' ]; then echo '=== Claude Context (re-injecting for compaction) ===' && cat .claude/claude.md; fi"
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/proactive-handoff.sh save && echo '' && echo '=== Session State (re-injecting for compaction) ===' && cat .claude/session-state.md 2>/dev/null || true && echo '' && if [ -f '.claude/context.md' ]; then echo '=== Context (re-injecting for compaction) ===' && cat .claude/context.md && echo ''; fi && if [ -f '.claude/claude.md' ]; then echo '=== Claude Context (re-injecting for compaction) ===' && cat .claude/claude.md; fi"
           }
         ]
       }
