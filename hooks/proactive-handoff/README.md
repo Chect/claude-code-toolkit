@@ -21,6 +21,7 @@ Automatically track session state for continuity across Claude Code sessions. Wh
 | `tasks-template.md` | Template for TodoWrite-integrated task tracking |
 | `DESIGN.md` | Detailed design documentation |
 | `TODOWRITE-INTEGRATION.md` | TodoWrite + tasks.md integration guide |
+| `HYBRID-MEMORY-PATTERN.md` | Files + MCP Memory hybrid approach |
 
 ## Installation
 
@@ -208,6 +209,72 @@ Auto-updated during session. Read at session start for continuity.
 
 <!-- Manual notes can be added here -->
 ```
+
+## Hybrid Memory Approach
+
+This system uses **two storage mechanisms** for optimal persistence:
+
+### 1. Files (Human-Readable, Git-Tracked)
+
+**Purpose:** Strategic context, current state, team-shared decisions
+
+- `.claude/session-state.md` - Auto-tracked file modifications, next steps
+- `.claude/tasks.md` - TodoWrite-integrated task tracking
+- `.claude/context.md` - Strategic decisions, architecture choices
+- `.claude/claude.md` - General project context
+
+**Why:** Team members can read, edit, and track changes via git
+
+### 2. MCP Memory Server (Semantic, Claude-Optimized)
+
+**Purpose:** Knowledge graph for semantic search and relationships
+
+- `.claude/memory.json` - Auto-managed knowledge graph (.gitignored)
+- Entities (projects, people, concepts)
+- Relations (dependencies, integrations)
+- Observations (facts, preferences, patterns)
+
+**Why:** Claude can query semantically, traverse relationships, and learn patterns
+
+### Quick Start
+
+```bash
+# 1. Files are already set up via proactive-handoff
+# 2. Enable MCP Memory (already in .mcp.json)
+claude mcp list | grep memory
+
+# 3. Add memory.json to .gitignore
+echo ".claude/memory.json" >> .gitignore
+
+# 4. Use both:
+# - Files: Strategic decisions (you/team edit)
+# - Memory: Claude auto-learns (semantic knowledge)
+```
+
+### Example: What Goes Where
+
+**Files (context.md):**
+```markdown
+## Architecture Decision
+We chose hybrid memory: files for team context,
+MCP Memory for semantic relationships.
+
+Rationale: Best of both worlds.
+```
+
+**Memory (auto-populated):**
+```json
+{
+  "entities": [
+    {"name": "chris", "observations": ["Prefers private branches for WIP"]}
+  ],
+  "relations": [
+    {"from": "chris", "to": "claude-code-toolkit", "relationType": "maintains"}
+  ]
+}
+```
+
+See [HYBRID-MEMORY-PATTERN.md](HYBRID-MEMORY-PATTERN.md) for complete guide.
 
 ## TodoWrite Integration
 

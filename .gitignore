@@ -6,3 +6,9 @@
 
 # Backup files
 *.bak
+
+# MCP Memory (auto-managed by Claude)
+# Note: memory.json should NOT be committed - it's Claude's semantic
+# knowledge graph that auto-populates. Strategic decisions go in
+# context.md (which IS committed).
+.claude/memory.json
