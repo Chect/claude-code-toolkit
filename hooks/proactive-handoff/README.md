@@ -6,6 +6,7 @@ Automatically track session state for continuity across Claude Code sessions. Wh
 
 - **Tracks modified files** — Auto-captured when you Edit/Write files
 - **Tracks next steps** — What to do if interrupted (manually updated)
+- **Integrates with TodoWrite** — Persistent tasks via .claude/tasks.md + TodoWrite UI
 - **Preserves state through compaction** — PreCompact hook saves backup AND re-injects state into compaction summary
 - **Loads previous state on start** — SessionStart hook displays previous session's state
 
@@ -17,7 +18,9 @@ Automatically track session state for continuity across Claude Code sessions. Wh
 | `post-edit-hook.sh` | Extracts file path from hook JSON input |
 | `session-start.sh` | SessionStart hook to load previous state |
 | `settings-snippet.json` | Complete hook configuration for settings.json |
+| `tasks-template.md` | Template for TodoWrite-integrated task tracking |
 | `DESIGN.md` | Detailed design documentation |
+| `TODOWRITE-INTEGRATION.md` | TodoWrite + tasks.md integration guide |
 
 ## Installation
 
@@ -206,6 +209,41 @@ Auto-updated during session. Read at session start for continuity.
 <!-- Manual notes can be added here -->
 ```
 
+## TodoWrite Integration
+
+Claude Code's built-in TodoWrite tool creates task checklists in the UI, but **todos don't persist across sessions**. This system integrates TodoWrite with persistent task storage:
+
+### Quick Start
+
+```bash
+# Create tasks file
+cp .claude/hooks/proactive-handoff/tasks-template.md .claude/tasks.md
+
+# Edit tasks
+cat > .claude/tasks.md << 'EOF'
+# Tasks
+
+## Active Tasks
+- [ ] Implement user authentication
+- [ ] Add input validation
+- [ ] Write tests
+
+## Completed
+- [x] Set up database
+EOF
+```
+
+### How It Works
+
+1. **SessionStart** - Loads `.claude/tasks.md` and instructs Claude to create TodoWrite todos
+2. **During work** - Claude uses TodoWrite for visual progress tracking
+3. **Completing tasks** - Claude updates `.claude/tasks.md` as tasks finish
+4. **PreCompact** - Re-injects tasks.md and reminds Claude to save current state
+
+**Result**: TodoWrite UI during session + persistent tasks.md across sessions
+
+See [TODOWRITE-INTEGRATION.md](TODOWRITE-INTEGRATION.md) for complete guide.
+
 ## How State Survives Compaction
 
 **Critical behavior**: SessionStart hooks do NOT run after autocompact - they only run when starting a brand new session. This means any state loaded at session start would be lost when context gets compacted.
@@ -213,10 +251,10 @@ Auto-updated during session. Read at session start for continuity.
 **Solution**: The PreCompact hook does TWO things:
 1. Saves backup to `.claude/session-state.md.bak`
 2. **Outputs all context files** - These get injected into the compaction summary, preserving state throughout the session:
-   - `session-state.md` (always)
-   - `context.md` (if exists)
-   - `tasks.md` (if exists)
-   - `claude.md` (if exists)
+   - `session-state.md` (always) - Auto-tracked file modifications and next steps
+   - `context.md` (if exists) - Strategic checkpoints and decisions
+   - `tasks.md` (if exists) - TodoWrite-integrated task tracking
+   - `claude.md` (if exists) - General project context
 
 Without the PreCompact re-injection, Claude would "forget" all these files after compaction.
 
