@@ -45,6 +45,10 @@
         "BRAVE_API_KEY": "${BRAVE_API_KEY}"
       },
       "disabled": true
+    },
+    "notion": {
+      "type": "http",
+      "url": "https://mcp.notion.com/mcp"
     }
   }
 }

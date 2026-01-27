@@ -22,6 +22,7 @@ This will either symlink or copy the `.mcp.json` configuration to your project r
 | **filesystem** | Secure file operations with access controls | No setup needed |
 | **sequential-thinking** | Enhanced problem-solving and reasoning | No setup needed |
 | **memory** | Persistent knowledge graph across sessions | No setup needed |
+| **notion** | Access to your Notion workspace | OAuth authentication required |
 
 ### Requires Configuration (Disabled by Default)
 
@@ -47,6 +48,30 @@ export MYSQL_DATABASE=your_database
 ```bash
 export BRAVE_API_KEY=your_api_key  # Get from https://brave.com/search/api/
 ```
+
+### Notion (OAuth)
+
+No environment variables needed - uses OAuth authentication.
+
+## Authenticating with Notion
+
+After setup, authenticate Notion in Claude Code:
+
+```bash
+# In Claude Code
+/mcp
+
+# Follow the OAuth flow in your browser
+# Grant access to your Notion workspace
+```
+
+This authorizes Claude Code to access your Notion workspace based on your existing permissions.
+
+**What you can do:**
+- Read and search Notion pages
+- Create and update pages
+- Query databases
+- Generate docs from Notion content
 
 ## Enabling Disabled Servers
 

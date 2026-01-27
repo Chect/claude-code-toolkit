@@ -49,7 +49,7 @@ Shared MCP (Model Context Protocol) server configuration for team use across mul
 
 | Feature | Description |
 |---------|-------------|
-| [Shared MCP Config](.mcp.json) | Git, filesystem, sequential-thinking, memory, MySQL, Brave Search |
+| [Shared MCP Config](.mcp.json) | Git, filesystem, sequential-thinking, memory, Notion, MySQL, Brave Search |
 | [Setup Script](scripts/setup-mcp.sh) | Automated setup for projects using toolkit as submodule |
 | [Documentation](MCP-SETUP.md) | Complete guide to MCP server configuration |
 
