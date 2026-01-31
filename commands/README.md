@@ -13,6 +13,7 @@ Commands are slash commands (like `/handoff-context`) that you can invoke in Cla
 | Command | Description |
 |---------|-------------|
 | [handoff-context](handoff-context/) | Save session context for the next session |
+| [handoff-context-bug](handoff-context-bug/) | Save detailed bug investigation for the next session |
 | [edit-settings](edit-settings/) | Reference guide for editing settings.json |
 
 ## Creating Your Own Commands
