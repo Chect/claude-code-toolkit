@@ -14,6 +14,7 @@ Commands are slash commands (like `/handoff-context`) that you can invoke in Cla
 |---------|-------------|
 | [handoff-context](handoff-context/) | Save session context for the next session |
 | [handoff-context-bug](handoff-context-bug/) | Save detailed bug investigation for the next session |
+| [handoff-context-task](handoff-context-task/) | Save long-running task progress across many sessions |
 | [edit-settings](edit-settings/) | Reference guide for editing settings.json |
 
 ## Creating Your Own Commands
