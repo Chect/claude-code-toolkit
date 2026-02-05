@@ -1,0 +1,3 @@
+[submodule "claude-squash-merge"]
+	path = claude-squash-merge
+	url = https://github.com/Chect/claude-squash-merge.git

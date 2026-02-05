@@ -40,9 +40,26 @@ Standalone scripts for automation and workflows.
 
 | Script | Description |
 |--------|-------------|
-| [wip-branch-workflow](scripts/wip-branch-workflow/) | Startup script for WIP branch pattern |
+| [setup-mcp.sh](scripts/setup-mcp.sh) | Automated MCP server setup |
 
 See [scripts/README.md](scripts/README.md) for general script documentation.
+
+### Submodules
+
+| Submodule | Description |
+|-----------|-------------|
+| [claude-squash-merge](claude-squash-merge/) | WIP branch workflow: auto-checkpoints, branch management, squash merge to main |
+
+**WIP Branch Workflow Quick Start:**
+```bash
+# Add to your project
+git submodule add https://github.com/Chect/claude-squash-merge.git .claude/claude-squash-merge
+
+# Or use the interactive setup
+/setup-wip-workflow
+```
+
+See [claude-squash-merge/README.md](claude-squash-merge/README.md) for full documentation.
 
 ### MCP Servers
 
