@@ -28,8 +28,9 @@ Slash commands (`/command-name`) that extend Claude's capabilities.
 
 | Command | Description |
 |---------|-------------|
-| [handoff-context](commands/handoff-context/) | Save session context for continuity across sessions |
-| [handoff-context-bug](commands/handoff-context-bug/) | Save detailed bug investigation report (separate file) |
+| [handoff](commands/handoff/) | **Interactive** session handoff - choose context, task, bug, or clean mode |
+| [handoff-context](commands/handoff-context/) | Save general session context (legacy, use /handoff instead) |
+| [handoff-context-bug](commands/handoff-context-bug/) | Save bug investigation context (legacy, use /handoff instead) |
 | [edit-settings](commands/edit-settings/) | Comprehensive reference for editing settings.json |
 
 See [commands/README.md](commands/README.md) for general command documentation.
