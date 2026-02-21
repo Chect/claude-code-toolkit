@@ -27,10 +27,26 @@ Automatically track session state for continuity across Claude Code sessions. Wh
 
 ## Installation
 
-### 1. Copy scripts to your project
+### 1. Link scripts to your project
+
+**Option A: Symlink from submodule (recommended)**
+
+If claude-code-toolkit is a git submodule at your project root:
 
 ```bash
-# From within your project directory
+mkdir -p .claude/hooks
+cd .claude/hooks
+ln -sf ../../claude-code-toolkit/hooks/proactive-handoff/proactive-handoff.sh .
+ln -sf ../../claude-code-toolkit/hooks/proactive-handoff/post-edit-hook.sh .
+ln -sf ../../claude-code-toolkit/hooks/proactive-handoff/session-start.sh .
+cd ../..
+```
+
+Relative paths keep symlinks portable across clones. Updates to the submodule automatically propagate.
+
+**Option B: Copy scripts**
+
+```bash
 mkdir -p .claude/hooks
 cp proactive-handoff.sh .claude/hooks/
 cp post-edit-hook.sh .claude/hooks/

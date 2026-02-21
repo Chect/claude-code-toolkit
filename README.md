@@ -4,6 +4,45 @@ A collection of hooks, commands, scripts, and patterns for enhancing [Claude Cod
 
 ## Quick Start
 
+### As a git submodule (recommended)
+
+```bash
+# 1. Add the submodule to your project root
+git submodule add https://github.com/Chect/claude-code-toolkit.git claude-code-toolkit
+
+# 2. Create .claude directories
+mkdir -p .claude/hooks .claude/commands
+
+# 3. Symlink hooks (relative paths — portable across clones)
+cd .claude/hooks
+ln -sf ../../claude-code-toolkit/hooks/proactive-handoff/proactive-handoff.sh .
+ln -sf ../../claude-code-toolkit/hooks/proactive-handoff/post-edit-hook.sh .
+ln -sf ../../claude-code-toolkit/hooks/proactive-handoff/session-start.sh .
+cd ../..
+
+# 4. Symlink commands
+cd .claude/commands
+ln -sf ../../claude-code-toolkit/commands/handoff/handoff.md .
+cd ../..
+
+# 5. Create .claude/settings.json with hook config
+#    (copy from claude-code-toolkit/hooks/proactive-handoff/settings-snippet.json)
+cp claude-code-toolkit/hooks/proactive-handoff/settings-snippet.json .claude/settings.json
+
+# 6. Add transient session files to .gitignore
+echo ".claude/session-state.md" >> .gitignore
+echo ".claude/session-state.md.bak" >> .gitignore
+echo ".claude/session-history.log" >> .gitignore
+
+# 7. Restart Claude Code
+```
+
+**Why symlinks?** Hooks and commands stay in sync when you update the submodule (`git submodule update --remote`). No manual re-copying.
+
+**Why relative paths?** Symlinks like `../../claude-code-toolkit/...` work regardless of where the repo is cloned on disk.
+
+### Manual install
+
 1. Browse the components below
 2. Copy files to your project's `.claude/` directory
 3. Follow the README in each component for setup
