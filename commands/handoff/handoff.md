@@ -19,7 +19,9 @@ Use AskUserQuestion with these options:
 1. **Context** (default) - "General context, clears task/bug state. Use when work is complete or switching focus."
 2. **Task** - "Multi-session task. Preserves detailed task tracking files."
 3. **Bug** - "Bug investigation. Creates bug-specific context (can layer on top of task)."
-4. **Clean** - "Reset to clean state. Keeps only project-specific files (CLAUDE.md, settings), clears all session context."
+4. **Recovery** - "Re-generate handoff from full transcript. Use after autocompact degraded context."
+
+Note: **Clean** is also available if the user types it via "Other". See the Clean section below.
 
 ### Step 2: Execute based on selection
 
@@ -220,6 +222,82 @@ See `.claude/current-task.md` for task details.
 
 ## Next Step
 [Single action to take next]
+```
+
+---
+
+## Option: Recovery
+
+**Purpose:** Re-generate handoff files from the full conversation transcript after autocompact has degraded context. This recovers details that were lost during compaction (exact test results, per-file breakdowns, debugging sequences, specific parameter values, etc.).
+
+**Important:** This option uses significant context. The user should `/clear` after recovery completes.
+
+### Step R1: Locate and extract transcript
+
+Find the current session's full transcript and extract the useful content:
+
+```bash
+# Find the most recent .jsonl transcript for this project
+PROJECT_DIR="$HOME/.claude/projects/$(pwd | sed 's|/|-|g; s|^-||')"
+TRANSCRIPT=$(ls -t "$PROJECT_DIR"/*.jsonl 2>/dev/null | head -1)
+```
+
+If no transcript is found, inform the user and abort.
+
+Run the extraction script to pull out only meaningful content (user messages, assistant summaries, test results, diagnostics). This filters out file reads, build noise, task acks, and other tool noise:
+
+```bash
+python3 "$(git rev-parse --show-toplevel)/claude-code-toolkit/commands/handoff/extract-transcript.py" "$TRANSCRIPT"
+```
+
+The script outputs a chronological flow of USER requests, CLAUDE responses, and OUTPUT results. It automatically stops at the compaction boundary.
+
+If the extraction script is not available, fall back to reading the `.jsonl` directly with the Read tool in chunks.
+
+### Step R2: Read the extracted output
+
+Read the extraction output directly into your context window using the Read tool. **Do NOT use a subagent** — the user will `/clear` or `/exit` after recovery, so using context space is fine and is the whole point.
+
+As you read, note:
+- Every user request and correction
+- Test/build results with exact numbers
+- Parameter tuning sequences (before → after)
+- Diagnostic output (timing, per-component breakdowns)
+- What worked vs. what didn't
+
+### Step R3: Ask target handoff type
+
+Use AskUserQuestion:
+
+**Question:** "What type of handoff should I generate from the recovered context?"
+**Header:** "Recovery"
+**Options:**
+1. **Task** (default) - "Multi-session task with full tracking files."
+2. **Context** - "General context summary."
+3. **Bug** - "Bug investigation context."
+
+### Step R4: Generate handoff files
+
+Using the recovered context (now in your main context window), generate the handoff files following the template for the selected type (Task, Context, or Bug) from the sections above.
+
+**Key difference from normal handoff:** Since you have full recovered context, you can and SHOULD include more specific details than usual:
+- Exact test result numbers per file, not just aggregates
+- Specific parameter tuning history with rationale for each change
+- Exact error messages and their fixes
+- Detailed debugging timeline
+
+The line limits on handoff files (50 for context.md, 100 for current-task.md) can be exceeded by up to 50% for recovery handoffs, since the extra detail is the whole point.
+
+### Step R5: Report
+
+Tell the user:
+```
+Recovery handoff complete:
+- Source: [transcript path] ([N] lines)
+- Generated: [list of files written]
+- Type: [Context|Task|Bug]
+
+You can now /clear to free context.
 ```
 
 ---
