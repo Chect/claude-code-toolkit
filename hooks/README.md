@@ -86,3 +86,4 @@ Hooks receive JSON on stdin with tool-specific data. For Bash tools:
 | Hook | Description |
 |------|-------------|
 | [dangerous-command-check](dangerous-command-check/) | Warns on `rm -rf` and similar destructive commands |
+| [bash-guard](bash-guard/) | Blocks command chaining, enforces dedicated tools, restricts write directories |
