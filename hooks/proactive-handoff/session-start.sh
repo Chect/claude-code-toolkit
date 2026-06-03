@@ -1,19 +1,18 @@
 #!/bin/bash
-# SessionStart hook - loads previous session state
+# SessionStart hook - surfaces handoff context + previous session state
 # Part of proactive-handoff system
 
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
-# Load previous session state if exists, or initialize new one
-if [ -f ".claude/session-state.md" ]; then
-    echo "=== Session State (previous session) ==="
-    cat ".claude/session-state.md"
-    echo ""
-    # Initialize fresh state for new session
-    .claude/hooks/proactive-handoff.sh init 2>/dev/null || true
-elif [ -f ".claude/hooks/proactive-handoff.sh" ]; then
-    # No previous state, just initialize
-    .claude/hooks/proactive-handoff.sh init 2>/dev/null || true
-fi
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Surface all handoff artifacts written by /handoff (context.md, mode-matched
+# current-task.md / current-bug.md + bug-test-log.md, recent-prompts.md) plus
+# the previous live session-state.md. Without this, a post-/clear session is
+# unaware a handoff occurred.
+"$HOOK_DIR/proactive-handoff.sh" load 2>/dev/null || true
+
+# Start a fresh live-state file for this session.
+"$HOOK_DIR/proactive-handoff.sh" init 2>/dev/null || true

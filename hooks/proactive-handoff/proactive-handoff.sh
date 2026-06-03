@@ -150,14 +150,76 @@ save_state() {
 
 # Load state at session start
 load_state() {
+    local printed_any=0
+
+    # 1. Surface the explicit handoff written by /handoff_* commands.
+    #    These are the canonical session-handoff artifacts and must never
+    #    be hidden — surfacing them is the whole point of SessionStart.
+    local mode=""
+    [ -f "$REPO_ROOT/.claude/mode" ] && mode=$(tr -d '[:space:]' < "$REPO_ROOT/.claude/mode")
+
+    if [ -f "$REPO_ROOT/.claude/context.md" ]; then
+        echo "=== Handoff: .claude/context.md (mode=${mode:-unset}) ==="
+        cat "$REPO_ROOT/.claude/context.md"
+        echo ""
+        printed_any=1
+    fi
+
+    # Task state — surfaced in task and task.bug modes.
+    case "$mode" in
+        task|task.bug)
+            if [ -f "$REPO_ROOT/.claude/current-task.md" ]; then
+                echo "=== Handoff: .claude/current-task.md ==="
+                cat "$REPO_ROOT/.claude/current-task.md"
+                echo ""
+                printed_any=1
+            fi
+            ;;
+    esac
+
+    # Bug state + the append-only test ledger — surfaced in bug and task.bug modes.
+    case "$mode" in
+        bug|task.bug)
+            if [ -f "$REPO_ROOT/.claude/current-bug.md" ]; then
+                echo "=== Handoff: .claude/current-bug.md ==="
+                cat "$REPO_ROOT/.claude/current-bug.md"
+                echo ""
+                printed_any=1
+            fi
+            if [ -f "$REPO_ROOT/.claude/bug-test-log.md" ]; then
+                echo "=== Handoff: .claude/bug-test-log.md ==="
+                cat "$REPO_ROOT/.claude/bug-test-log.md"
+                echo ""
+                printed_any=1
+            fi
+            ;;
+    esac
+
+    if [ -f "$REPO_ROOT/.claude/recent-prompts.md" ]; then
+        echo "=== Handoff: .claude/recent-prompts.md ==="
+        cat "$REPO_ROOT/.claude/recent-prompts.md"
+        echo ""
+        printed_any=1
+    fi
+
+    # 2. Surface live session-state.md (the proactive tracker), if present.
     if [ -f "$STATE_FILE" ]; then
         echo "=== Previous Session State ==="
         cat "$STATE_FILE"
         echo ""
+        printed_any=1
     elif [ -f "$BACKUP_FILE" ]; then
         echo "=== Restored Session State ==="
         cp "$BACKUP_FILE" "$STATE_FILE"
         cat "$STATE_FILE"
+        echo ""
+        printed_any=1
+    fi
+
+    # 3. If nothing was surfaced, say so explicitly. Silent exit hides bugs.
+    if [ "$printed_any" -eq 0 ]; then
+        echo "=== Handoff: no prior session state found ==="
+        echo "Checked: $REPO_ROOT/.claude/{context.md,current-task.md,current-bug.md,bug-test-log.md,recent-prompts.md,session-state.md}"
         echo ""
     fi
 }
